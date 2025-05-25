@@ -1,0 +1,13 @@
+streamlit
+langchain-community
+langchain
+chromadb
+ollama
+langchain-ollama
+unstructured
+pytesseract
+# Add pdfminer.six if unstructured[pdf] needs it explicitly on your system
+pdfminer.six
+# Add other dependencies if unstructured requires them (e.g., for specific image processing)
+Pillow
+opencv-python
