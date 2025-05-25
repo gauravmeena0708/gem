@@ -1,6 +1,7 @@
 import os
-os.environ['TESSERACT_TEMP_DIR'] = '/home/aizceq/Downloads/gem/temp_tesseract_files'
-os.environ['TESSDATA_PREFIX'] = '/home/aizceq/Downloads/tessdata_best-main'
+
+#os.environ['TESSERACT_TEMP_DIR'] = '/home/aizceq/Downloads/gem/temp_tesseract_files'
+#os.environ['TESSDATA_PREFIX'] = '/home/aizceq/Downloads/tessdata_best-main'
 
 import pytesseract
 import chromadb
@@ -9,10 +10,6 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_ollama import OllamaEmbeddings
 from chromadb import Documents, EmbeddingFunction, Embeddings
 from chromadb.utils import embedding_functions
-
-pytesseract.pytesseract.tesseract_cmd = '/snap/bin/tesseract'
-
-
 PDF_FOLDER_PATH = "./data/" 
 CHROMA_DB_PATH = "./chroma_db_offline" 
 OLLAMA_BASE_URL = "http://localhost:11434"
@@ -42,8 +39,9 @@ for filename in os.listdir(PDF_FOLDER_PATH):
 
         elements = partition_pdf(
             filepath,
-            strategy="auto",
+            strategy="ocr_only",  # or "hi_res" if OCR fails
         )
+
         full_text = "\n\n".join([str(el) for el in elements if el.text])
         chunks = text_splitter.split_text(full_text)
         for i, chunk in enumerate(chunks):

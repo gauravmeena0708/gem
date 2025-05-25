@@ -1,31 +1,43 @@
 import streamlit as st
 import os
+from typing import List
 
 # --- Re-import/Re-initialize necessary components ---
-from langchain_community.embeddings import OllamaEmbeddings
-from langchain_community.llms import Ollama # For the LLM
+#from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
+from langchain_ollama import OllamaEmbeddings, OllamaLLM
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
-from langchain.vectorstores import Chroma
-
 import chromadb
+from chromadb.api.types import EmbeddingFunction
 
 # --- Configuration ---
 CHROMA_DB_PATH = "./chroma_db_offline"
 OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_LLM_MODEL = "gemma:7b" # Or "gemma:7b" if you downloaded that
+OLLAMA_LLM_MODEL = "gemma:7b"
 OLLAMA_EMBEDDING_MODEL = "nomic-embed-text"
 collection_name = "pdf_knowledge_base_offline"
 
+# --- Define Chroma-compatible wrapper for Ollama embeddings ---
+class ChromaCompatibleOllamaEmbeddingFunction(EmbeddingFunction):
+    def __init__(self, model: str, base_url: str):
+        self.ollama = OllamaEmbeddings(model=model, base_url=base_url)
+
+    def __call__(self, input: List[str]) -> List[List[float]]:
+        return self.ollama.embed_documents(input)
+
+    def embed_query(self, text: str) -> List[float]:
+        return self.ollama.embed_query(text)
+
+
 # Initialize Embedding Model for app
-embedding_model = OllamaEmbeddings(
+embedding_model = ChromaCompatibleOllamaEmbeddingFunction(
     model=OLLAMA_EMBEDDING_MODEL,
     base_url=OLLAMA_BASE_URL
 )
 
 # Initialize Ollama LLM
-# Make sure your Ollama server is running and the model is downloaded (`ollama run gemma:2b`)
-llm = Ollama(
+llm = OllamaLLM(
     model=OLLAMA_LLM_MODEL,
     base_url=OLLAMA_BASE_URL,
     temperature=0.2,
@@ -35,14 +47,14 @@ llm = Ollama(
 chroma_client_retrieval = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 collection_retrieval = chroma_client_retrieval.get_collection(
     name=collection_name,
-    embedding_function=embedding_model # Use the same embedding function
+    embedding_function=embedding_model
 )
 vectorstore = Chroma(
     client=chroma_client_retrieval,
     collection_name=collection_name,
     embedding_function=embedding_model
 )
-retriever = vectorstore.as_retriever(search_kwargs={"k": 5}) # Retrieve top 5 relevant chunks
+retriever = vectorstore.as_retriever(search_kwargs={"k": 5})  # Retrieve top 5 relevant chunks
 
 # Define the prompt template for Gemma
 prompt_template = """

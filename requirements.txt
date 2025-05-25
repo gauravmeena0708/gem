@@ -11,3 +11,5 @@ pdfminer.six
 # Add other dependencies if unstructured requires them (e.g., for specific image processing)
 Pillow
 opencv-python
+pytesseract
+chromadb
